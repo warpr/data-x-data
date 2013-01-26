@@ -1,0 +1,19 @@
+{
+    "author": "Kuno Woudt <kuno@frob.nl>",
+    "dependencies": {
+        "db-mysql": "0.7.x"
+    },
+    "devDependencies": {
+        "mocha": "1.8.x"
+    },
+    "description": "a minimal web analytics system",
+    "engines": {
+        "node": ">=0.8"
+    },
+    "scripts": {
+        "test": "bin/runtests.sh"
+    },
+    "license": "copyleft-next-0.1.0",
+    "name": "DATA×DATA",
+    "version": "0.1.0"
+}
