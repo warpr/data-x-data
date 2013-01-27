@@ -16,6 +16,7 @@ server {
     }
 
     location /data-x-data {
+        proxy_set_header Host $host;
         proxy_pass http://data_x_data;
     }
 }
