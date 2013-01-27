@@ -27,6 +27,19 @@ This is the information I want to know as a web developer when add
 features or otherwise make changes to an existing site.
 
 
+Cookielaw
+=========
+
+Even though DATA×DATA does not use cookies, and does not log
+personally identifiable information, it may still be subject to the
+so-called cookie law.
+
+Using any form of first-party or third-party analytics may require
+informed consent from your users if your target audience includes
+citizens of EU member states which have implemented the e-Privacy
+directive 2009/136/EC.
+
+
 License
 =======
 
@@ -40,8 +53,8 @@ Install
 =======
 
 DATA×DATA is written in javascript, the server-side code needs nodejs.
-The client-side code obviously runs in the browser.  Install the
-dependencies with npm:
+The client-side code runs in the browser.  Install the dependencies
+with npm:
 
     npm install
 
@@ -89,13 +102,13 @@ Reports
 Currently there are no fancy graphs or reports.  A quick stats script
 is included as src/stats.js, run it like this:
 
-    node --no-deprecation src/stats.js
+    node src/stats.js
 
 
 TODO
 ====
 
 1. Add unittests
-2. Resolve user agent strings to browser name + browser version
+2. (fixed)
 3. Add a commandline argument which allows listening on a different ip/port.
 4. Double-check "useragent" database, IE10 seems to be reported as IE7.
