@@ -49,6 +49,13 @@ DATA×DATA is licensed under copyleft-next version 0.1.0, see
 LICENSE.txt for more information.
 
 
+Download
+========
+
+site:   https://frob.nl/DATA×DATA
+code:   https://gitorious.org/data-x-data/data-x-data
+
+
 Install
 =======
 
