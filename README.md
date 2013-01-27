@@ -62,7 +62,7 @@ Usage
 
 You can run the server using nodejs [1]:
 
-    node --no-deprecation src/app.js
+    node src/app.js
 
 The server will serve the client script on any url ending in .js, and
 will log a page view on any url ending in a screen resolution
@@ -81,10 +81,6 @@ in '.js'.
 
 A sample web page is included as src/demo.html, you can view that at
 http://localhost:7184/demo/ when the server is running.
-
-[1] The '--no-deprecation' argument is to silence some "ev_ref is
-deprecated, use uv_ref" warnings, which I believe are coming from
-db-mysql, but I have not properly investigated this.
 
 
 Reports

@@ -10,7 +10,7 @@ LICENSE.txt for more information.
 
 var fs        = require ('fs');
 var http      = require ('http');
-var mysql     = require ('db-mysql');
+var mysql     = require ('mysql');
 var path      = require ('path');
 var url       = require ('url');
 var useragent = require ('useragent');
@@ -64,11 +64,11 @@ function filter_browsers (rows) {
 };
 
 function collate_screen_sizes (connection) {
-    var query_str = "SELECT count(screen_size) AS count, screen_size AS value "
-        + "FROM page_views "
-        + "GROUP BY screen_size ORDER BY count(screen_size) DESC";
+    var query_str = 'SELECT count(screen_size) AS count, screen_size AS value '
+        + 'FROM page_views '
+        + 'GROUP BY screen_size ORDER BY count(screen_size) DESC';
 
-    connection.query (query_str).execute (function (error, rows, cols) {
+    connection.query (query_str, function (error, rows, cols) {
         error
             ? console.log ('ERROR: ' + error)
             : console.log (display_percentages ('Screen sizes', rows).join ("\n"));
@@ -76,11 +76,11 @@ function collate_screen_sizes (connection) {
 };
 
 function collate_browsers (connection) {
-    var query_str = "SELECT count(user_agent) AS count, user_agent AS value "
-        + "FROM page_views "
-        + "GROUP BY user_agent ORDER BY count(user_agent) DESC";
+    var query_str = 'SELECT count(user_agent) AS count, user_agent AS value '
+        + 'FROM page_views '
+        + 'GROUP BY user_agent ORDER BY count(user_agent) DESC';
 
-    connection.query (query_str).execute (function (error, rows, cols) {
+    connection.query (query_str, function (error, rows, cols) {
         error
             ? console.log ('ERROR: ' + error)
             : console.log (display_percentages (
@@ -90,24 +90,19 @@ function collate_browsers (connection) {
 
 
 function main () {
-    var db = new mysql.Database({
-        hostename: 'localhost',
+
+    var connection = mysql.createConnection ({
+        host: 'localhost',
         user: 'data_x_data',
         password: 'data_x_data',
         database: 'data_x_data'
     });
 
-    db.on ('error', function (error) {
-        console.log ('ERROR: ', error);
-    });
+    connection.connect ();
+    collate_screen_sizes (connection);
+    collate_browsers (connection);
 
-    db.on ('ready', function (server) {
-        var connection = this;
-        collate_screen_sizes (connection);
-        collate_browsers (connection);
-    });
-
-    db.connect ();
+    connection.end ();
 };
 
 main ();

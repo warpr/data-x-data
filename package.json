@@ -1,7 +1,7 @@
 {
     "author": "Kuno Woudt <kuno@frob.nl>",
     "dependencies": {
-        "db-mysql": "0.7.x",
+        "mysql": "2.0.x",
         "underscore": "1.4.x",
         "underscore.string": "2.3.x",
         "useragent": "2.0.x"

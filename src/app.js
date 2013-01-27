@@ -10,7 +10,7 @@ LICENSE.txt for more information.
 
 var fs     = require ('fs');
 var http   = require ('http');
-var mysql  = require ('db-mysql');
+var mysql  = require ('mysql');
 var path   = require ('path');
 var url    = require ('url');
 
@@ -21,16 +21,16 @@ var demo_html = fs.readFileSync (
     path.join (here, 'demo.html')).toString ();
 
 function write_page_view (connection, data) {
-    var columns = ['host', 'screen_size', 'user_agent'];
     var row = [ data.host, data.screen_size, data.user_agent ];
 
-    connection.query ()
-        .insert ('page_views', columns, row)
-        .execute (function (error, result) {
-            if (error) {
-                console.log ('ERROR: ' + error);
-            }
-        });
+    var query_str = 'INSERT INTO page_views (host, screen_size, user_agent) '
+        + 'VALUES (?, ?, ?)';
+
+    connection.query (query_str, row, function (error, result) {
+        if (error) {
+            console.log ('ERROR: ' + error);
+        }
+    });
 };
 
 function log_page_view (request, response, connection, size) {
@@ -77,27 +77,38 @@ function listener (connection) {
     };
 };
 
+function handle_database_disconnect (connection) {
+    connection.on ('error', function(err) {
+        if (!err.fatal) {
+            return;
+        }
+
+        if (err.code !== 'PROTOCOL_CONNECTION_LOST') {
+            throw err;
+        }
+
+        console.log ('Re-connecting lost connection: ' + err.stack);
+
+        connection = mysql.createConnection (connection.config);
+        handle_database_disconnect (connection);
+        connection.connect ();
+    });
+};
+
 exports.app = function (port, hostname) {
 
-    var db = new mysql.Database({
-        hostename: 'localhost',
+    var connection = mysql.createConnection ({
+        host: 'localhost',
         user: 'data_x_data',
         password: 'data_x_data',
         database: 'data_x_data'
     });
 
-    db.on ('error', function (error) {
-        console.log ('ERROR: ', error);
-    });
+    handle_database_disconnect (connection);
 
-    db.on ('ready', function (server) {
-        var connection = this;
-        console.log ('Connected to mysql ' + server.version);
-        console.log ('Server running at http://127.0.0.1:' + port.toString () + '/');
-        http.createServer (listener (connection)).listen (port, hostname);
-    });
+    console.log ('Server running at http://127.0.0.1:' + port.toString () + '/');
+    http.createServer (listener (connection)).listen (port, hostname);
 
-    db.connect ();
 };
 
 exports.app(7184);
