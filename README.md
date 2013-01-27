@@ -8,27 +8,24 @@ You're reading the README.md of DATA×DATA, a minimal web analytics
 system.
 
 Most web analytics systems are designed to track users, or more
-specifically to track conversion rates in a sales funnel.
-
-If you're not operating an e-commerce site the information tracked by
-analytics software is often not relevant or useful.
-
-However, as a developer you still want to know a few bits of
-information so you can tailor your website or web application to your
-audience.
+specifically to track conversion rates in a sales funnel. If you're
+not operating an e-commerce site the information tracked by analytics
+software is often not relevant or useful. However, as a developer you
+still want to know a few bits of information so you can tailor your
+website or web application to your audience.
 
 DATA×DATA currently writes a log entry for each page view, and these
 entries contain two things (per site):
 
-    1. Screen resolution
-    2. User agent string
+1. Screen resolution
+2. User agent string
 
 This is the information I want to know as a web developer when I add
 features or otherwise make changes to an existing site.
 
 
 Cookielaw
-=========
+---------
 
 Even though DATA×DATA does not use cookies, and does not log
 personally identifiable information, it may still be subject to the
@@ -41,23 +38,23 @@ directive 2009/136/EC.
 
 
 License
-=======
+-------
 
-Copyright 2013  Kuno Woudt <kuno@frob.nl>
+Copyright 2013  Kuno Woudt
 
 DATA×DATA is licensed under copyleft-next version 0.1.0, see
 LICENSE.txt for more information.
 
 
 Download
-========
+--------
 
-site:   https://frob.nl/DATA×DATA
-code:   https://gitorious.org/data-x-data/data-x-data
+    site:   https://frob.nl/DATA×DATA
+    code:   https://gitorious.org/data-x-data/data-x-data
 
 
 Install
-=======
+-------
 
 DATA×DATA is written in javascript, the server-side code needs nodejs.
 The client-side code runs in the browser.  Install the dependencies
@@ -66,8 +63,8 @@ with npm:
     npm install
 
 DATA×DATA uses a database to store page views.  Currently only MySQL
-is supported, support for writing this data to files, syslog or to other
-databases may be added in the future (patches welcome!).
+is supported, support for writing this data to files, syslog or to
+other databases may be added in the future (patches welcome!).
 
 To create the database, connect to mysql as an admin user and source
 the included database.sql file:
@@ -78,9 +75,9 @@ This will create a 'data_x_data' database and user.
 
 
 Usage
-=====
+-----
 
-You can run the server using nodejs [1]:
+You can run the server using nodejs:
 
     node src/app.js
 
@@ -104,7 +101,7 @@ http://localhost:7184/demo/ when the server is running.
 
 
 Reports
-=======
+-------
 
 Currently there are no fancy graphs or reports.  A quick stats script
 is included as src/stats.js, run it like this:
@@ -113,9 +110,9 @@ is included as src/stats.js, run it like this:
 
 
 TODO
-====
+----
 
 1. Add unittests
 2. (fixed)
 3. Add a commandline argument which allows listening on a different ip/port.
-4. Double-check "useragent" database, IE10 seems to be reported as IE7.
+4. Double-check "useragent" database, IE10 is reported as IE7 in some situations.
