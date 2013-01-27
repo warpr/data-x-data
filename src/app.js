@@ -15,8 +15,10 @@ var path   = require ('path');
 var url    = require ('url');
 
 var here = path.dirname (path.resolve (__filename));
-var data_x_data_js = fs.readFileSync (
-    path.join (here, 'data-x-data.js')).toString ();
+var client_js = fs.readFileSync (
+    path.join (here, 'client.js')).toString ();
+var demo_html = fs.readFileSync (
+    path.join (here, 'demo.html')).toString ();
 
 function write_page_view (connection, data) {
     var columns = ['host', 'screen_size', 'user_agent'];
@@ -45,19 +47,6 @@ function log_page_view (request, response, connection, size) {
     response.end('');
 };
 
-function serve_script (request, response) {
-    response.writeHead (200, { 'Content-Type': 'application/x-javascript' });
-    response.end (data_x_data_js);
-};
-
-function serve_404 (request, response) {
-    response.writeHead (404, {
-        'Content-Type': 'text/plain',
-        'Access-Control-Allow-Origin': '*',
-    });
-    response.end('NOT FOUND');
-};
-
 function listener (connection) {
     return function (request, response) {
         var location = url.parse(request.url);
@@ -65,15 +54,25 @@ function listener (connection) {
 
         if (location.path.match (/\.js$/))
         {
-            serve_script (request, response);
+            response.writeHead (200, { 'Content-Type': 'application/x-javascript' });
+            response.end (client_js);
         }
         else if (matches = location.path.match (/[0-9]+x[0-9]+$/))
         {
             log_page_view (request, response, connection, matches[0]);
         }
+        else if (location.path.match (/demo\/?$/))
+        {
+            response.writeHead (200, { 'Content-Type': 'text/html' });
+            response.end (demo_html);
+        }
         else
         {
-            serve_404 (request, response);
+            response.writeHead (404, {
+                'Content-Type': 'text/plain',
+                'Access-Control-Allow-Origin': '*',
+            });
+            response.end('NOT FOUND');
         }
     };
 };

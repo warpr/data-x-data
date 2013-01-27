@@ -60,9 +60,9 @@ This will create a 'data_x_data' database and user.
 Usage
 =====
 
-You can run the server using nodejs:
+You can run the server using nodejs [1]:
 
-    node src/app.js
+    node --no-deprecation src/app.js
 
 The server will serve the client script on any url ending in .js, and
 will log a page view on any url ending in a screen resolution
@@ -79,7 +79,21 @@ The id="data-x-data" attribute is required, the src attribute can be
 anything which you've routed to the nodejs server, as long as it ends
 in '.js'.
 
-A sample nginx configuration is included in nginx.sample.conf.
+A sample web page is included as src/demo.html, you can view that at
+http://localhost:7184/demo/ when the server is running.
+
+[1] The '--no-deprecation' argument is to silence some "ev_ref is
+deprecated, use uv_ref" warnings, which I believe are coming from
+db-mysql, but I have not properly investigated this.
+
+
+Reports
+=======
+
+Currently there are no fancy graphs or reports.  A quick stats script
+is included as src/stats.js, run it like this:
+
+    node --no-deprecation src/stats.js
 
 
 TODO
@@ -88,4 +102,4 @@ TODO
 1. Add unittests
 2. Resolve user agent strings to browser name + browser version
 3. Add a commandline argument which allows listening on a different ip/port.
-
+4. Double-check "useragent" database, IE10 seems to be reported as IE7.
