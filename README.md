@@ -23,7 +23,7 @@ entries contain two things (per site):
     1. Screen resolution
     2. User agent string
 
-This is the information I want to know as a web developer when add
+This is the information I want to know as a web developer when I add
 features or otherwise make changes to an existing site.
 
 
@@ -78,10 +78,10 @@ You can run the server using nodejs [1]:
     node src/app.js
 
 The server will serve the client script on any url ending in .js, and
-will log a page view on any url ending in a screen resolution
-(e.g. 1280x768).  It is suggested to configure your web front-end to
-only route requests for e.g. /data-x-data to the DATA×DATA nodejs
-server.
+will log a page view on any url ending in a screen resolution (e.g.
+1280x768).  It is suggested to configure your web front-end to only
+route requests for e.g. /data-x-data to the DATA×DATA nodejs server (a
+sample nginx configuration is included as etc/nginx.conf.sample).
 
 On each web page you want to log page views for embed the following
 script element:

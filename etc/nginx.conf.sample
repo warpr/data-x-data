@@ -1,0 +1,22 @@
+
+upstream data_x_data {
+    server 127.0.0.1:7184 weight=1 max_fails=0 fail_timeout=5s;
+}
+
+server {
+    listen      80;
+    listen      [::]:80 default ipv6only=on;
+    server_name example.org;
+
+    root /var/www/;
+    index index.html;
+
+    location / {
+        autoindex on;
+    }
+
+    location /data-x-data {
+        proxy_pass http://data_x_data;
+    }
+}
+
