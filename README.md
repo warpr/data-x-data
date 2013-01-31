@@ -116,3 +116,8 @@ TODO
 2. (fixed)
 3. Add a commandline argument which allows listening on a different ip/port.
 4. Double-check "useragent" database, IE10 is reported as IE7 in some situations.
+   (should look for Trident/6.0, not MSIE 10)
+5. exports.app in app.js takes a port and hostname, but hardcodes
+   127.0.0.1 in the console.log() call before createServer.  this is
+   obviously wrong.
+6. app.js and stats.js have hardcoded and duplicate database credentials.
