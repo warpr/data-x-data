@@ -3,7 +3,7 @@
 stats.js — this file is part of DATA×DATA, a minimal web analytics system.
 Copyright 2013 Kuno Woudt <kuno@frob.nl>
 
-DATA×DATA is licensed under copyleft-next version 0.1.0, see
+DATA×DATA is licensed under copyleft-next version 0.3.0, see
 LICENSE.txt for more information.
 
 */
