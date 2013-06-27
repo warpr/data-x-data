@@ -8,6 +8,7 @@ LICENSE.txt for more information.
 
 */
 
+var config    = require ('./config');
 var fs        = require ('fs');
 var http      = require ('http');
 var mysql     = require ('mysql');
@@ -91,12 +92,7 @@ function collate_browsers (connection) {
 
 function main () {
 
-    var connection = mysql.createConnection ({
-        host: 'localhost',
-        user: 'data_x_data',
-        password: 'data_x_data',
-        database: 'data_x_data'
-    });
+    var connection = mysql.createConnection (config.read ('database'));
 
     connection.connect ();
     collate_screen_sizes (connection);

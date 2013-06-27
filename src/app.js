@@ -8,11 +8,12 @@ LICENSE.txt for more information.
 
 */
 
-var fs     = require ('fs');
-var http   = require ('http');
-var mysql  = require ('mysql');
-var path   = require ('path');
-var url    = require ('url');
+var config    = require ('./config');
+var fs        = require ('fs');
+var http      = require ('http');
+var mysql     = require ('mysql');
+var path      = require ('path');
+var url       = require ('url');
 
 var here = path.dirname (path.resolve (__filename));
 var client_js = fs.readFileSync (
@@ -97,18 +98,16 @@ function handle_database_disconnect (connection) {
 
 exports.app = function (port, hostname) {
 
-    var connection = mysql.createConnection ({
-        host: 'localhost',
-        user: 'data_x_data',
-        password: 'data_x_data',
-        database: 'data_x_data'
-    });
+    var connection = mysql.createConnection (config.read ('database'));
+
+    var options = config.read ('server');
 
     handle_database_disconnect (connection);
 
-    console.log ('Server running at http://127.0.0.1:' + port.toString () + '/');
-    http.createServer (listener (connection)).listen (port, hostname);
+    console.log ('Server running at http://' + options.host +
+                 ':' + options.port + '/');
+    http.createServer (listener (connection)).listen (options.port, options.host);
 
 };
 
-exports.app(7184);
+exports.app();

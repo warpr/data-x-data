@@ -1,6 +1,7 @@
 {
     "author": "Kuno Woudt <kuno@frob.nl>",
     "dependencies": {
+        "inireader": "0.3.x",
         "mysql": "2.0.x",
         "underscore": "1.4.x",
         "underscore.string": "2.3.x",
