@@ -1,8 +1,9 @@
 {
     "author": "Kuno Woudt <kuno@frob.nl>",
     "dependencies": {
+        "any-db": "0.6.x",
         "inireader": "0.3.x",
-        "mysql": "2.0.x",
+        "pg": "2.0.x",
         "underscore": "1.4.x",
         "underscore.string": "2.3.x",
         "useragent": "2.0.x"
@@ -10,7 +11,7 @@
     "devDependencies": {
         "mocha": "1.8.x"
     },
-    "description": "a minimal web analytics system",
+    "description": "DATA×DATA is a minimal web analytics system",
     "engines": {
         "node": ">=0.8"
     },
@@ -18,6 +19,6 @@
         "test": "bin/runtests.sh"
     },
     "license": "copyleft-next-0.1.0",
-    "name": "DATA×DATA",
+    "name": "data-x-data",
     "version": "0.1.0"
 }

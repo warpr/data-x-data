@@ -62,16 +62,19 @@ with npm:
 
     npm install
 
-DATA×DATA uses a database to store page views.  Currently only MySQL
-is supported, support for writing this data to files, syslog or to
-other databases may be added in the future (patches welcome!).
+DATA×DATA uses a database to store page views.  Currently only
+PostgreSQL is supported, support for writing this data to files,
+syslog or to other databases may be added in the future (patches
+welcome!).
 
-To create the database, connect to mysql as an admin user and source
-the included database.sql file:
+Use createdb to create the database and use psql to create the tables
+using the included install/database.sql:
 
-    mysql> source install/database.sql
+    createdb -U root data_x_data;
+    psql -U root data_x_data < install/database.sql
 
-This will create a 'data_x_data' database and user.
+Replace "root" with the name of your database superuser.  These commands
+will create a 'data_x_data' database and user.
 
 
 Usage

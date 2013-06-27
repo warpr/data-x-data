@@ -11,7 +11,7 @@ LICENSE.txt for more information.
 var config    = require ('./config');
 var fs        = require ('fs');
 var http      = require ('http');
-var mysql     = require ('mysql');
+var anyDB     = require ('any-db');
 var path      = require ('path');
 var url       = require ('url');
 
@@ -21,26 +21,69 @@ var client_js = fs.readFileSync (
 var demo_html = fs.readFileSync (
     path.join (here, 'demo.html')).toString ();
 
-function write_page_view (connection, data) {
-    var row = [ data.host, data.screen_size, data.user_agent ];
 
-    var query_str = 'INSERT INTO page_views (host, screen_size, user_agent) '
-        + 'VALUES (?, ?, ?)';
+function start_of_current_month () {
+    var d = new Date ();
 
-    connection.query (query_str, row, function (error, result) {
-        if (error) {
-            console.log ('ERROR: ' + error);
-        }
-    });
+    d.setUTCDate (1);
+    d.setUTCHours (0);
+    d.setUTCMinutes (0);
+    d.setUTCSeconds (0);
+    d.setUTCMilliseconds (0);
+
+    return d;
 };
 
-function log_page_view (request, response, connection, size) {
-    write_page_view (connection, {
+
+function write_page_view (db, data) {
+    var x = null;
+    var y = null;
+
+    var parts = data.screen_size.split ('x');
+
+    if (Boolean (parts[1]))
+    {
+        x = parseInt (parts[0], 10);
+        y = parseInt (parts[1], 10);
+    }
+
+    var some_date = start_of_current_month ();
+    var interval_start = some_date.toISOString ();
+    some_date.setUTCMonth (some_date.getUTCMonth () + 1);
+    var interval_end = some_date.toISOString ();
+
+    var query = db.query (
+            "WITH counted AS (" +
+            "    UPDATE page_views" +
+            "       SET sum=sum+1" +
+            "     WHERE host=$1" +
+            "       AND user_agent=$2" +
+            "       AND x=$3" +
+            "       AND y=$4" +
+            "       AND interval_start=$5" +
+            "       AND interval_end=$6" +
+            " RETURNING *" +
+            ")" +
+            "INSERT INTO page_views (" +
+            "     host, user_agent, x, y, interval_start, interval_end)" +
+            "(" +
+            "    SELECT $1, $2, $3, $4, $5, $6" +
+            "    WHERE NOT EXISTS (SELECT 1 FROM counted)" +
+            ");",
+        [ data.host, data.user_agent, x, y, interval_start, interval_end ]
+    );
+
+    query.on ('error', console.error);
+};
+
+function log_page_view (request, response, db, size) {
+    write_page_view (db, {
         host: request.headers.host,
         screen_size: size,
         user_agent: request.headers['user-agent']
     });
 
+    /* Respond immediatly, don't wait for the database to be done. */
     response.writeHead (204, {
         'Content-Type': 'text/plain',
         'Access-Control-Allow-Origin': '*',
@@ -48,7 +91,7 @@ function log_page_view (request, response, connection, size) {
     response.end('');
 };
 
-function listener (connection) {
+function listener (db) {
     return function (request, response) {
         var location = url.parse(request.url);
         var matches = null;
@@ -60,7 +103,7 @@ function listener (connection) {
         }
         else if (matches = location.path.match (/[0-9]+x[0-9]+$/))
         {
-            log_page_view (request, response, connection, matches[0]);
+            log_page_view (request, response, db, matches[0]);
         }
         else if (location.path.match (/demo\/?$/))
         {
@@ -78,36 +121,14 @@ function listener (connection) {
     };
 };
 
-function handle_database_disconnect (connection) {
-    connection.on ('error', function(err) {
-        if (!err.fatal) {
-            return;
-        }
-
-        if (err.code !== 'PROTOCOL_CONNECTION_LOST') {
-            throw err;
-        }
-
-        console.log ('Re-connecting lost connection: ' + err.stack);
-
-        connection = mysql.createConnection (connection.config);
-        handle_database_disconnect (connection);
-        connection.connect ();
-    });
-};
-
 exports.app = function (port, hostname) {
 
-    var connection = mysql.createConnection (config.read ('database'));
-
     var options = config.read ('server');
-
-    handle_database_disconnect (connection);
+    var pool = anyDB.createPool (config.read ('database').url);
 
     console.log ('Server running at http://' + options.host +
                  ':' + options.port + '/');
-    http.createServer (listener (connection)).listen (options.port, options.host);
-
+    http.createServer (listener (pool)).listen (options.port, options.host);
 };
 
 exports.app();
