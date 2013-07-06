@@ -3,12 +3,13 @@
 app.js — this file is part of DATA×DATA, a minimal web analytics system.
 Copyright 2013 Kuno Woudt <kuno@frob.nl>
 
-DATA×DATA is licensed under copyleft-next version 0.1.0, see
+DATA×DATA is licensed under copyleft-next version 0.3.0, see
 LICENSE.txt for more information.
 
 */
 
 var config    = require ('./config');
+var util      = require ('./util');
 var fs        = require ('fs');
 var http      = require ('http');
 var anyDB     = require ('any-db');
@@ -21,18 +22,6 @@ var client_js = fs.readFileSync (
 var demo_html = fs.readFileSync (
     path.join (here, 'demo.html')).toString ();
 
-
-function start_of_current_month () {
-    var d = new Date ();
-
-    d.setUTCDate (1);
-    d.setUTCHours (0);
-    d.setUTCMinutes (0);
-    d.setUTCSeconds (0);
-    d.setUTCMilliseconds (0);
-
-    return d;
-};
 
 
 function write_page_view (db, data) {
@@ -47,10 +36,7 @@ function write_page_view (db, data) {
         y = parseInt (parts[1], 10);
     }
 
-    var some_date = start_of_current_month ();
-    var interval_start = some_date.toISOString ();
-    some_date.setUTCMonth (some_date.getUTCMonth () + 1);
-    var interval_end = some_date.toISOString ();
+    var interval = util.interval_month ();
 
     var query = db.query (
             "WITH counted AS (" +
@@ -70,7 +56,7 @@ function write_page_view (db, data) {
             "    SELECT $1, $2, $3, $4, $5, $6" +
             "    WHERE NOT EXISTS (SELECT 1 FROM counted)" +
             ");",
-        [ data.host, data.user_agent, x, y, interval_start, interval_end ]
+        [ data.host, data.user_agent, x, y, interval.start, interval.end ]
     );
 
     query.on ('error', console.error);

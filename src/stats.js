@@ -9,96 +9,152 @@ LICENSE.txt for more information.
 */
 
 var config    = require ('./config');
+var util      = require ('./util');
 var fs        = require ('fs');
 var http      = require ('http');
-var mysql     = require ('mysql');
+var anyDB     = require ('any-db');
 var path      = require ('path');
 var url       = require ('url');
 var useragent = require ('useragent');
+var when      = require ('when');
 var _         = require ('underscore');
 
 _.mixin(require('underscore.string').exports());
 
 function display_percentage (total, value) {
-    return Math.round (value / total* 100).toString () + '%';
+    return _(Math.round (value / total * 100).toString ()).lpad (3, ' ') + '%';
 };
 
-function display_percentages (title, rows) {
-    var total = _(rows).reduce (function (memo, item) {
-        return memo + item.count;
-    }, 0);
+function collate_screen_sizes (db, date) {
+    var interval = util.interval_month (date);
+    var deferred = when.defer ();
 
-    var lines = [ title + ":\n" ];
+    var query = db.query (
+        'SELECT x, y, SUM(sum) AS visits FROM page_views ' +
+            'WHERE interval_start >= $1 AND interval_end <= $2 '+
+            'GROUP BY x, y ' +
+            'ORDER BY x DESC, y DESC',
+        [ interval.start, interval.end ]);
 
-    _(rows).each (function (item) {
-        lines.push (
-            _(display_percentage (total, item.count)).lpad(5, ' ')
-            + " \t " + item.value);
+    query.on ('error', console.error);
+
+    var results = { rows: [], total_visits: 0 };
+    query.on ('row', function (row) {
+        results.rows.push (row);
+        /* FIXME: for some reason visits is returned as string instead of int. */
+        row.visits = parseInt (row.visits, 10);
+        results.total_visits += row.visits;
     });
 
-    lines.push ("");
-    return lines;
+    query.on ('end', function (rows) {
+        deferred.resolve (results);
+    });
+
+    return deferred.promise;
 };
 
-function filter_browsers (rows) {
-    var filtered = {};
+function render_screen_sizes (data) {
+    return _(data.rows).map (function (row) {
+        var size = _(row.x).lpad (6, ' ') + "x" + _(row.y).rpad (6, ' ');
+        var visits = _(row.visits.toString ()).lpad (5, ' ');
+        var percentage = display_percentage (data.total_visits, row.visits);
 
-    _(rows).each (function (item) {
-        var browser = useragent.parse (item.value);
+        return '          ' + size + '    visits:' + visits + ', ' + percentage;
+    });
+};
+
+function render_browsers (data) {
+    var browsers = _(data.browsers).keys ();
+    browsers.sort ();
+
+    return _(browsers).map (function (key) {
+        var visits = _(data.browsers[key].toString ()).lpad (5, ' ');
+        var percentage = display_percentage (data.total_visits, data.browsers[key]);
+
+        return _(key).lpad (21, ' ') + '      visits:' + visits + ', ' + percentage;
+    });
+};
+
+function collate_user_agents (db, date) {
+    var interval = util.interval_month (date);
+    var deferred = when.defer ();
+
+    var query = db.query (
+        'SELECT user_agent, SUM(sum) AS visits FROM page_views ' +
+            'WHERE interval_start >= $1 AND interval_end <= $2 ' +
+            'GROUP BY user_agent ',
+        [ interval.start, interval.end ]);
+
+    query.on ('error', console.error);
+
+    var results = { browsers: {}, total_visits: 0 };
+    query.on ('row', function (row) {
+        var browser = useragent.parse (row.user_agent);
         var browser_name = browser.family + " " + browser.major;
-        if (! _(filtered[browser_name]).isNumber ())
+        row.visits = parseInt (row.visits, 10);
+
+        if (! _(results.browsers).has (browser_name))
         {
-            filtered[browser_name] = 0;
+            results.browsers[browser_name] = row.visits;
         }
-        filtered[browser_name] += item.count;
+        else
+        {
+            results.browsers[browser_name] += row.visits;
+        }
+
+        /* FIXME: for some reason visits is returned as string instead of int. */
+        results.total_visits += row.visits;
     });
 
-    return _(filtered)
-        .chain ()
-        .map (function (count, browser_name) {
-            return { count: count, value: browser_name };
-        })
-        .sortBy (function (item) {
-            return 0 - item.count;
-        })
-        .value ();
+    query.on ('end', function (rows) {
+        deferred.resolve (results);
+    });
+
+    return deferred.promise;
 };
 
-function collate_screen_sizes (connection) {
-    var query_str = 'SELECT count(screen_size) AS count, screen_size AS value '
-        + 'FROM page_views '
-        + 'GROUP BY screen_size ORDER BY count(screen_size) DESC';
 
-    connection.query (query_str, function (error, rows, cols) {
-        error
-            ? console.log ('ERROR: ' + error)
-            : console.log (display_percentages ('Screen sizes', rows).join ("\n"));
-    });
-};
+function display_month (pool, d) {
+    var deferred = when.defer ();
 
-function collate_browsers (connection) {
-    var query_str = 'SELECT count(user_agent) AS count, user_agent AS value '
-        + 'FROM page_views '
-        + 'GROUP BY user_agent ORDER BY count(user_agent) DESC';
+    console.log ("\n" + util.render_month (d) + "\n");
+    var print_screen_sizes = collate_screen_sizes (pool, d).then (
+        function (results) {
+            _(render_screen_sizes (results)).each (function (line) {
+                console.log (line);
+            });
+            console.log ("");
 
-    connection.query (query_str, function (error, rows, cols) {
-        error
-            ? console.log ('ERROR: ' + error)
-            : console.log (display_percentages (
-                'Browsers', filter_browsers (rows)).join ("\n"));
-    });
+            var print_browser_versions = collate_user_agents (pool, d).then (
+                function (results) {
+                    _(render_browsers (results)).each (function (line) {
+                        console.log (line);
+                    });
+                    console.log ("");
+                    deferred.resolve ();
+                });
+        });
+
+
+    return deferred.promise;
 };
 
 
 function main () {
 
-    var connection = mysql.createConnection (config.read ('database'));
+    var pool = anyDB.createPool (config.read ('database').url);
 
-    connection.connect ();
-    collate_screen_sizes (connection);
-    collate_browsers (connection);
+    /* output stats for a complete month (so last month). */
+    last_month = util.last_month ();
 
-    connection.end ();
+    /* output stats for the running month (incomplete). */
+    current_month = util.start_of_month ();
+
+    display_month (pool, last_month).then (function () {
+        display_month (pool, current_month).then (function () {
+            pool.close ();
+        });
+    });
 };
 
 main ();

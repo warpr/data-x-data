@@ -6,7 +6,8 @@
         "pg": "2.0.x",
         "underscore": "1.4.x",
         "underscore.string": "2.3.x",
-        "useragent": "2.0.x"
+        "useragent": "2.0.x",
+        "when": "2.2.x"
     },
     "devDependencies": {
         "mocha": "1.8.x"
