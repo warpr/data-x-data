@@ -26,7 +26,7 @@ function display_percentage (total, value) {
 };
 
 function collate_screen_sizes (db, date) {
-    var interval = util.interval_month (date);
+    var interval = date.interval ();
     var deferred = when.defer ();
 
     var query = db.query (
@@ -38,15 +38,15 @@ function collate_screen_sizes (db, date) {
 
     query.on ('error', console.error);
 
-    var results = { rows: [], total_visits: 0 };
+    var results = { data: [], total_visits: 0 };
     query.on ('row', function (row) {
-        results.rows.push (row);
+        results.data.push (row);
         /* FIXME: for some reason visits is returned as string instead of int. */
         row.visits = parseInt (row.visits, 10);
         results.total_visits += row.visits;
     });
 
-    query.on ('end', function (rows) {
+    query.on ('end', function () {
         deferred.resolve (results);
     });
 
@@ -54,7 +54,14 @@ function collate_screen_sizes (db, date) {
 };
 
 function render_screen_sizes (data) {
-    return _(data.rows).map (function (row) {
+    return _(data.data).filter (function (row) {
+        /* do not display visitors which do not have a screen. */
+        if (row.x === 0 || row.y === 0)
+            return false;
+
+        /* do not display results with less than 0.5% visits. */
+        return (row.visits / data.total_visits * 100) > 0.5;
+    }).map (function (row) {
         var size = _(row.x).lpad (6, ' ') + "x" + _(row.y).rpad (6, ' ');
         var visits = _(row.visits.toString ()).lpad (5, ' ');
         var percentage = display_percentage (data.total_visits, row.visits);
@@ -64,19 +71,38 @@ function render_screen_sizes (data) {
 };
 
 function render_browsers (data) {
-    var browsers = _(data.browsers).keys ();
+    var browsers = _(data.data).keys ();
     browsers.sort ();
 
-    return _(browsers).map (function (key) {
-        var visits = _(data.browsers[key].toString ()).lpad (5, ' ');
-        var percentage = display_percentage (data.total_visits, data.browsers[key]);
+    var flattened = [];
+    _(browsers).each (function (browser) {
+        _(data.data[browser]).each (function (item) {
+            flattened.push (_(item).extend ({ browser: browser }));
+        });
+    });
 
-        return _(key).lpad (21, ' ') + '      visits:' + visits + ', ' + percentage;
+    return _(flattened).filter (function (item) {
+        var percentage = item.visits / data.total_visits * 100;
+
+        /* only display commonly used browsers. */
+        if (percentage < 0.5)
+        {
+            return false;
+        }
+
+        /* do not display common bots. */
+        return item.browser !== 'Googlebot' && item.browser !== 'BingPreview';
+    }).map (function (item) {
+        var visits = _(item.visits.toString ()).lpad (5, ' ');
+        var percentage = display_percentage (data.total_visits, item.visits);
+
+        return _(item.browser + ' ' + item.version.toString ()).lpad (21, ' ') +
+            '      visits:' + visits + ', ' + percentage;
     });
 };
 
 function collate_user_agents (db, date) {
-    var interval = util.interval_month (date);
+    var interval = date.interval ();
     var deferred = when.defer ();
 
     var query = db.query (
@@ -87,37 +113,45 @@ function collate_user_agents (db, date) {
 
     query.on ('error', console.error);
 
-    var results = { browsers: {}, total_visits: 0 };
+    var results = { data: {}, total_visits: 0 };
     query.on ('row', function (row) {
-        var browser = useragent.parse (row.user_agent);
-        var browser_name = browser.family + " " + browser.major;
+        /* FIXME: for some reason visits is returned as string instead of int. */
         row.visits = parseInt (row.visits, 10);
 
-        if (! _(results.browsers).has (browser_name))
-        {
-            results.browsers[browser_name] = row.visits;
-        }
-        else
-        {
-            results.browsers[browser_name] += row.visits;
-        }
+        var browser = useragent.parse (row.user_agent);
+        var name = browser.family;
+        var version = browser.major;
 
-        /* FIXME: for some reason visits is returned as string instead of int. */
+        results.data[name] = results.data[name] || {};
+        results.data[name][version] = results.data[name][version] || { version: parseInt (version, 10) };
+        results.data[name][version].visits = row.visits;
+
         results.total_visits += row.visits;
     });
 
-    query.on ('end', function (rows) {
+    query.on ('end', function () {
+
+        _(results.data).each (function (versions, browser) {
+            results.data[browser] = _(versions).chain ()
+                .map (function (obj, key) {
+                    return obj;
+                })
+                .sortBy (function (obj) { return obj.version; })
+                .reverse ()
+                .value ();
+        });
+
         deferred.resolve (results);
     });
 
     return deferred.promise;
 };
 
-
+/*
 function display_month (pool, d) {
     var deferred = when.defer ();
 
-    console.log ("\n" + util.render_month (d) + "\n");
+    console.log ("\n" + d.toDisplayString () + "\n");
     var print_screen_sizes = collate_screen_sizes (pool, d).then (
         function (results) {
             _(render_screen_sizes (results)).each (function (line) {
@@ -138,24 +172,117 @@ function display_month (pool, d) {
 
     return deferred.promise;
 };
+*/
 
-
-function main () {
-
-    var pool = anyDB.createPool (config.read ('database').url);
-
-    /* output stats for a complete month (so last month). */
-    last_month = util.last_month ();
-
-    /* output stats for the running month (incomplete). */
-    current_month = util.start_of_month ();
-
-    display_month (pool, last_month).then (function () {
-        display_month (pool, current_month).then (function () {
-            pool.close ();
-        });
+function or_better (list) {
+    var visits = 0;
+    return _(list).map (function (obj, idx) {
+        visits += obj.visits;
+        return _({}).extend (obj, { visits: visits });
     });
 };
 
-main ();
+function or_wider (data) {
+    data.or_better = or_better (data.data);
+
+    return data;
+};
+
+function or_newer (data) {
+
+    data.or_better = {};
+
+    _(data.data).each (function (versions, browser) {
+        data.or_better[browser] = or_better (versions);
+    });
+
+    return data;
+};
+
+function gather_stats (pool, d) {
+    var deferred = when.defer ();
+    var gather_screen_sizes = collate_screen_sizes (pool, d);
+    var gather_browser_versions = collate_user_agents (pool, d);
+
+    when.all ([ gather_screen_sizes, gather_browser_versions ]).then (
+        function (data) {
+            var result = {};
+            result[d.toISOString ()] = {
+                "screens": or_wider (data[0]),
+                "browsers": or_newer (data[1])
+            }
+            deferred.resolve (result);
+        });
+
+    return deferred.promise;
+}
+
+function display_month (month_str, data) {
+    console.log (new util.Month (month_str).toDisplayString () + ":\n");
+
+    _(render_screen_sizes (data.screens)).each (function (line) {
+        console.log (line);
+    });
+
+    console.log ("");
+
+    _(render_browsers (data.browsers)).each (function (line) {
+        console.log (line);
+    });
+
+    console.log ("");
+};
+
+function help () {
+    console.log ("Usage node stats.js [OPTION]");
+    console.log ("");
+    console.log ("  --json    Generate json instead of human-readable output");
+}
+
+function main (argv) {
+
+    var help = _(argv).contains ('--help');
+    if (help)
+    {
+        return help ();
+    }
+
+    var json = _(argv).contains ('--json');
+    var pool = anyDB.createPool (config.read ('database').url);
+
+    var n = 3; /* last N months. */
+    var data = {};
+    var promises = [];
+    var current_month = new util.Month ();
+
+    while (n-- > 0)
+    {
+        promises.push (gather_stats (pool, current_month).then (
+            function (results) {
+                _(data).extend (results);
+            }));
+
+        current_month = current_month.previous ();
+    }
+
+    when.settle (promises).then (function () {
+        pool.close ();
+
+        if (json)
+        {
+            console.log (JSON.stringify (data, null, 2));
+        }
+        else
+        {
+            var months = _(data).keys ();
+            months.sort ();
+
+            _(months).each (function (month) {
+                display_month (month, data[month]);
+            });
+        }
+    });
+};
+
+main (process.argv);
 

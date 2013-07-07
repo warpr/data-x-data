@@ -8,33 +8,46 @@ LICENSE.txt for more information.
 
 */
 
-function start_of_month (d) {
-    d = d ? new Date (d.getTime ()) : new Date ();
+var _         = require ('underscore');
 
-    d.setUTCDate (1);
-    d.setUTCHours (0);
-    d.setUTCMinutes (0);
-    d.setUTCSeconds (0);
-    d.setUTCMilliseconds (0);
+_.mixin(require('underscore.string').exports());
 
-    return d;
+function Month(d) {
+    if (typeof d === 'undefined')
+    {
+        this.date = new Date ();
+    }
+    else if (typeof d === 'string')
+    {
+        this.date = new Date (d + "-01");
+    }
+    else
+    {
+        this.date = new Date (d.getTime ());
+    }
+
+    this.date.setUTCDate (1);
+    this.date.setUTCHours (0);
+    this.date.setUTCMinutes (0);
+    this.date.setUTCSeconds (0);
+    this.date.setUTCMilliseconds (0);
+}
+
+Month.prototype.interval = function () {
+    var end = new Date(this.date.getTime ());
+    end.setUTCMonth (this.date.getUTCMonth () + 1);
+
+    return {
+        start: new Date(this.date.getTime ()),
+        end: end
+    };
 };
 
-function interval_month (d) {
-    var interval = {};
-    var some_date = start_of_month (d);
-    interval['start'] = some_date.toISOString ();
-    some_date.setUTCMonth (some_date.getUTCMonth () + 1);
-    interval['end'] = some_date.toISOString ();
+Month.prototype.previous = function () {
+    var ret = new Date(this.date.getTime ());
+    ret.setUTCMonth (this.date.getUTCMonth () - 1);
 
-    return interval;
-};
-
-function last_month () {
-    var m = start_of_month ();
-    m.setUTCMonth (m.getUTCMonth () - 1);
-
-    return m;
+    return new Month (ret);
 };
 
 var months = [
@@ -42,11 +55,14 @@ var months = [
     "July", "August", "September", "October", "November", "December"
 ];
 
-function render_month (d) {
-    return months[d.getMonth ()] + " " + d.getFullYear ().toString ();
+Month.prototype.toDisplayString = function () {
+    return months[this.date.getMonth ()] + " " +
+        this.date.getFullYear ().toString ();
 };
 
-module.exports.start_of_month = start_of_month;
-module.exports.interval_month = interval_month;
-module.exports.last_month = last_month;
-module.exports.render_month = render_month;
+Month.prototype.toISOString = function () {
+    return this.date.getFullYear () + "-" +
+        _((this.date.getMonth () + 1).toString ()).lpad (2, '0');
+};
+
+module.exports.Month = Month;

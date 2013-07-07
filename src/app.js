@@ -36,7 +36,7 @@ function write_page_view (db, data) {
         y = parseInt (parts[1], 10);
     }
 
-    var interval = util.interval_month ();
+    var interval = new util.Month ().interval ();
 
     var query = db.query (
             "WITH counted AS (" +
