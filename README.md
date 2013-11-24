@@ -14,11 +14,11 @@ software is often not relevant or useful. However, as a developer you
 still want to know a few bits of information so you can tailor your
 website or web application to your audience.
 
-DATA×DATA currently writes a log entry for each page view, and these
-entries contain two things (per site):
+DATA×DATA counts page views separately for each unique combination of:
 
 1. Screen resolution
 2. User agent string
+3. Current Month/Year
 
 This is the information I want to know as a web developer when I add
 features or otherwise make changes to an existing site.
@@ -63,9 +63,7 @@ with npm:
     npm install
 
 DATA×DATA uses a database to store page views.  Currently only
-PostgreSQL is supported, support for writing this data to files,
-syslog or to other databases may be added in the future (patches
-welcome!).
+PostgreSQL is supported.
 
 Use createdb to create the database and use psql to create the tables
 using the included install/database.sql:

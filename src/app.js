@@ -10,6 +10,7 @@ LICENSE.txt for more information.
 
 var config    = require ('./config');
 var util      = require ('./util');
+var stats     = require ('./stats');
 var fs        = require ('fs');
 var http      = require ('http');
 var anyDB     = require ('any-db');
@@ -21,8 +22,8 @@ var client_js = fs.readFileSync (
     path.join (here, 'client.js')).toString ();
 var demo_html = fs.readFileSync (
     path.join (here, 'demo.html')).toString ();
-
-
+var demo_html = fs.readFileSync (
+    path.join (here, 'stats.html')).toString ();
 
 function write_page_view (db, data) {
     var x = null;
@@ -91,10 +92,22 @@ function listener (db) {
         {
             log_page_view (request, response, db, matches[0]);
         }
-        else if (location.path.match (/demo\/?$/))
+        else if (location.path.match (/\/demo\/?$/))
         {
             response.writeHead (200, { 'Content-Type': 'text/html' });
             response.end (demo_html);
+        }
+        else if (location.path.match (/\/stats\/?$/))
+        {
+            response.writeHead (200, { 'Content-Type': 'text/html' });
+            response.end (stats_html);
+        }
+        else if (location.path.match (/\/data.json$/))
+        {
+            stats.gather_all_stats (db, 3).then (function (data) {
+                response.writeHead (200, { 'Content-Type': 'application/json' });
+                response.end (JSON.stringify (data, null, 2));
+            });
         }
         else
         {

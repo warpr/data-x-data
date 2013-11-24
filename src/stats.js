@@ -147,33 +147,6 @@ function collate_user_agents (db, date) {
     return deferred.promise;
 };
 
-/*
-function display_month (pool, d) {
-    var deferred = when.defer ();
-
-    console.log ("\n" + d.toDisplayString () + "\n");
-    var print_screen_sizes = collate_screen_sizes (pool, d).then (
-        function (results) {
-            _(render_screen_sizes (results)).each (function (line) {
-                console.log (line);
-            });
-            console.log ("");
-
-            var print_browser_versions = collate_user_agents (pool, d).then (
-                function (results) {
-                    _(render_browsers (results)).each (function (line) {
-                        console.log (line);
-                    });
-                    console.log ("");
-                    deferred.resolve ();
-                });
-        });
-
-
-    return deferred.promise;
-};
-*/
-
 function or_better (list) {
     var visits = 0;
     return _(list).map (function (obj, idx) {
@@ -239,6 +212,29 @@ function help () {
     console.log ("  --json    Generate json instead of human-readable output");
 }
 
+function gather_all_stats (pool, months) {
+    var deferred = when.defer ();
+    var data = {};
+    var promises = [];
+    var current_month = new util.Month ();
+
+    while (months-- > 0)
+    {
+        promises.push (gather_stats (pool, current_month).then (
+            function (results) {
+                _(data).extend (results);
+            }));
+
+        current_month = current_month.previous ();
+    }
+
+    when.settle (promises).then (function () {
+        deferred.resolve (data);
+    });
+
+    return deferred.promise;
+}
+
 function main (argv) {
 
     var help = _(argv).contains ('--help');
@@ -250,22 +246,7 @@ function main (argv) {
     var json = _(argv).contains ('--json');
     var pool = anyDB.createPool (config.read ('database').url);
 
-    var n = 3; /* last N months. */
-    var data = {};
-    var promises = [];
-    var current_month = new util.Month ();
-
-    while (n-- > 0)
-    {
-        promises.push (gather_stats (pool, current_month).then (
-            function (results) {
-                _(data).extend (results);
-            }));
-
-        current_month = current_month.previous ();
-    }
-
-    when.settle (promises).then (function () {
+    gather_all_stats (pool, 3).then (function (data) {
         pool.close ();
 
         if (json)
@@ -284,5 +265,12 @@ function main (argv) {
     });
 };
 
-main (process.argv);
+if (require.main === module)
+{
+    main (process.argv);
+}
+else
+{
+    module.exports.gather_all_stats = gather_all_stats;
+}
 

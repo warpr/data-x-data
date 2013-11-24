@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html, body, div, span, h1, h2, h3, h4, h5, h6, p, a, em {
+          margin: 0; padding: 0; border: 0; outline: 0; font-size: 115%;
+          vertical-align: baseline; background: transparent; color: black;
+          text-decoration: none; font-style: normal;
+      }
+      :focus { outline: 0; }
+
+      h1, h2 { font-family: "Liberation Sans", "DejaVu Sans", Helvetica, sans-serif; }
+      p { font-family: "Liberation Serif", "DejaVu Serif", Georgia, serif; }
+
+      body { padding: 2em 0 2em 2em; }
+      h1 {
+          border-style: solid;
+          border-width: 0 0 1px 0;
+          font-size: 200%;
+          letter-spacing: -0.05em;
+          margin: 1em 0;
+      }
+
+      h2 {
+          border-style: solid;
+          border-width: 0 0 1px 0;
+          font-size: 120%;
+          letter-spacing: -0.05em;
+          text-transform: uppercase;
+          text-align: right;
+      }
+
+      section {
+         display: block;
+         width: 24em;
+         float: left;
+         position: relative;
+         margin: 3em 3em 0 0;
+      }
+
+      p { padding: 1em; font-size: 80%; line-height: 1.5em; }
+
+      /* colours */
+      body { background: #2e2520; }
+      h1, h2, p, a, em { color: #e8ca98; border-color: #e8ca98; }
+
+    </style>
+  </head>
+  <body>
+
+    <h1 class="sans">DATA×DATA</h1>
+
+    <section class="left">
+      <h2>description</h2>
+      <p>DATA×DATA is a minimal <a href="https://en.wikipedia.org/wiki/Web_analytics">web analytics</a> system.</p>
+      <p>
+        Most web analytics systems are designed to track users,
+        which may raise <a href="https://www.eff.org/issues/do-not-track">privacy
+        concerns</a>.  DATA×DATA is designed to only log <em>screen
+        resolution</em> and <em>browser version</em> for each page
+        view, which is what a web developer needs to optimize their
+        site.
+      </p>
+      <p>
+        No other data is logged.  So no tracking cookies, ip
+        addresses, geolocation data, etc...  There is no way to associate a
+        page view with a particular user<sup>†</sup>.
+      </p>
+      <p>
+        <sup>†</sup><small>Unless that user has a unique screen resolution or user agent string.</small>
+      </p>
+    </section>
+
+    <section class="right">
+      <h2>download</h2>
+      <p>
+        <a href="https://gitorious.org/data-x-data/data-x-data">gitorious.org/data-x-data</a>
+      </p>
+    </section>
+
+    <section class="right">
+      <h2>copyright</h2>
+      <p>
+        Copyright 2013  <a href="https://frob.nl/#me">Kuno Woudt</a><br />
+        DATA×DATA is licensed under
+        <a href="https://gitorious.org/copyleft-next/copyleft-next/blobs/raw/master/Releases/copyleft-next-0.3.0">copyleft-next 0.3.0</a>.
+      </p>
+    </section>
+
+    <script id="data-x-data" src="/data-x-data.js"></script>
+
+  </body>
+</html>
